@@ -5,7 +5,12 @@ import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 
-axios.defaults.baseURL = import.meta.env.VITE_BASE_URL || "http://localhost:3000"
+const apiBaseUrl =
+    import.meta.env.VITE_BASE_URL ||
+    import.meta.env.VITE_API_URL ||
+    (import.meta.env.DEV ? "http://localhost:3000" : "");
+
+axios.defaults.baseURL = apiBaseUrl;
 
 export const AppContext=createContext()
 
@@ -120,6 +125,7 @@ useEffect(()=>{
 
     const value={
         axios,
+        apiBaseUrl,
         fetchIsAdmin,
         user,
         authLoaded: isLoaded,

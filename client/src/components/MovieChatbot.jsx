@@ -23,7 +23,7 @@ const MovieChatbot = () => {
 
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
-  const { shows, axios, isSignedIn, getToken } = useAppContext()
+  const { shows, axios, apiBaseUrl, isSignedIn, getToken } = useAppContext()
 
   useEffect(() => {
     if (isOpen && !isMinimized) messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -84,9 +84,14 @@ const MovieChatbot = () => {
       if (!isOpen || isMinimized) setUnread((n) => n + 1)
     } catch (err) {
       console.error('Chat error:', err)
+      const isLocalApi = apiBaseUrl?.includes('localhost')
+      const message = isLocalApi
+        ? "Oops! Make sure the local server is running on port 3000 and try again."
+        : "Oops! I couldn't reach the QuickShow API. Please check the deployed backend URL in VITE_BASE_URL."
+
       setMessages((prev) => [...prev, {
         role: 'assistant',
-        content: "Oops! Make sure the server is running on port 3000 and try again."
+        content: message
       }])
     } finally {
       setIsLoading(false)
