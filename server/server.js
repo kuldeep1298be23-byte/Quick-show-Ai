@@ -16,17 +16,37 @@ const app=express();
 const port=3000;
 connectDB()
 
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  process.env.CLIENT_URL,
+  process.env.FRONTEND_URL,
+  process.env.VITE_CLIENT_URL,
+].filter(Boolean);
+
+const corsOptions = {
+  origin(origin, callback) {
+    if (
+      !origin ||
+      allowedOrigins.includes(origin) ||
+      /^https:\/\/quickshow.*\.vercel\.app$/.test(origin)
+    ) {
+      return callback(null, true);
+    }
+
+    return callback(new Error(`Not allowed by CORS: ${origin}`));
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
 //stripe webhooks route
 app.use('/api/stripe',express.raw({type:'application/json'}),stripeWebhooks)
 
 //middleware
 app.use(express.json());
-app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:4173'],
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  credentials: true
-}));
+app.use(cors(corsOptions));
 app.use(clerkMiddleware())
 
 //api routes
