@@ -21,18 +21,23 @@ const Loading = () => {
           const token = await getToken()
           if(!token){
             toast.error('Please sign in to confirm your payment')
-            return
+          } else {
+            const { data } = await axios.get(`/api/booking/confirm-payment?session_id=${sessionId}`, {
+              headers: { Authorization: `Bearer ${token}` }
+            })
+            if (data?.warning) {
+              toast.error(data.warning)
+            }
           }
-          await axios.get(`/api/booking/confirm-payment?session_id=${sessionId}`, {
-            headers: { Authorization: `Bearer ${token}` }
-          })
         }catch(error){
           toast.error(error.response?.data?.message || error.message)
         }
       }
 
       if(nextUrl){
-        navigate('/'+nextUrl)
+        navigate('/'+nextUrl, { replace: true })
+      } else {
+        navigate('/', { replace: true })
       }
     }
 

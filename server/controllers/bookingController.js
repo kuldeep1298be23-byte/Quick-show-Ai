@@ -148,13 +148,21 @@ export const confirmBookingPayment=async (req, res)=>{
         }
 
         try {
-            await sendBookingConfirmationEmail(booking._id.toString());
+            const emailResult = await sendBookingConfirmationEmail(booking._id.toString());
+            return res.json({
+                success: true,
+                message: "Payment confirmed",
+                emailSent: Boolean(emailResult?.sent || emailResult?.skipped),
+            });
         } catch (error) {
             console.error("Booking confirmation email failed:", error.message);
-            return res.status(500).json({ success: false, message: "Payment confirmed, but email could not be sent" });
+            return res.json({
+                success: true,
+                message: "Payment confirmed",
+                emailSent: false,
+                warning: "Booking confirmed, but confirmation email could not be sent right now.",
+            });
         }
-
-        res.json({success:true, message:"Payment confirmed"})
 
      }catch (error){
         console.log(error.message);

@@ -4,11 +4,54 @@ const WELCOME =
   "Hey! I'm your QuickShow AI assistant. Ask me anything about movies, showtimes, or what to watch tonight!";
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-2.5-flash-lite';
+const RETRYABLE_STATUS_CODES = [500, 502, 503, 504];
+const RETRY_DELAYS_MS = [700, 1400];
 
 const isQuotaError = (message = '') =>
   message.includes('429') ||
   message.toLowerCase().includes('quota') ||
   message.toLowerCase().includes('too many requests');
+
+const getErrorStatus = (error) =>
+  error?.status ||
+  error?.response?.status ||
+  error?.errorDetails?.status;
+
+const isTemporaryAiError = (error) => {
+  const message = error?.message?.toLowerCase() || '';
+  const status = getErrorStatus(error);
+
+  return (
+    RETRYABLE_STATUS_CODES.includes(Number(status)) ||
+    message.includes('503') ||
+    message.includes('service unavailable') ||
+    message.includes('high demand') ||
+    message.includes('try again later') ||
+    message.includes('temporarily unavailable')
+  );
+};
+
+const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+const sendMessageWithRetry = async (chat, message) => {
+  let lastError;
+
+  for (let attempt = 0; attempt <= RETRY_DELAYS_MS.length; attempt += 1) {
+    try {
+      return await chat.sendMessage(message);
+    } catch (error) {
+      lastError = error;
+
+      if (!isTemporaryAiError(error) || attempt === RETRY_DELAYS_MS.length) {
+        throw error;
+      }
+
+      await delay(RETRY_DELAYS_MS[attempt]);
+    }
+  }
+
+  throw lastError;
+};
 
 const fallbackReply = (userMessage, movieContext) => {
   const movieLines = (movieContext || '')
@@ -17,10 +60,10 @@ const fallbackReply = (userMessage, movieContext) => {
     .slice(0, 5);
 
   if (movieLines.length > 0) {
-    return `AI quota is temporarily exhausted, but I can still help from QuickShow data. Currently showing:\n${movieLines.join('\n')}\n\nClick a movie to view showtimes and book seats.`;
+    return `QuickShow AI is busy right now, but I can still help from QuickShow data. Currently showing:\n${movieLines.join('\n')}\n\nClick a movie to view showtimes and book seats.`;
   }
 
-  return `AI quota is temporarily exhausted, but the QuickShow server is working. Please add a valid Gemini API key with quota, then try asking again.`;
+  return `QuickShow AI is temporarily busy, but the QuickShow server is working. Please try again in a moment.`;
 };
 
 export const chatWithAI = async (req, res) => {
@@ -76,7 +119,7 @@ Guidelines:
     });
 
     const chat = model.startChat({ history });
-    const result = await chat.sendMessage(lastMessage.content);
+    const result = await sendMessageWithRetry(chat, lastMessage.content);
     const reply = result.response.text();
 
     res.json({ success: true, reply });
@@ -84,7 +127,7 @@ Guidelines:
     const errMsg = error?.message || 'AI service error.';
     console.error('Gemini Chat Error:', errMsg);
 
-    if (isQuotaError(errMsg)) {
+    if (isQuotaError(errMsg) || isTemporaryAiError(error)) {
       return res.json({
         success: true,
         reply: fallbackReply(req.body?.messages?.at(-1)?.content, req.body?.movieContext),

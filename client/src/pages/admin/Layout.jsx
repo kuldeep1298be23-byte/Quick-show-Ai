@@ -7,7 +7,11 @@ import Loading from '../../components/Loading'
 
 const Layout = () => {
 
-const { isAdmin } = useAppContext()
+const { isAdmin, isCheckingAdmin } = useAppContext()
+
+  if (isCheckingAdmin) {
+    return <Loading />
+  }
 
   return isAdmin ? (
     <>

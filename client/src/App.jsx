@@ -23,7 +23,7 @@ import MovieChatbot from './components/MovieChatbot'
 const App = () => {
 
 const isAdminRoute=useLocation().pathname.startsWith('/admin')
-const { user } = useAppContext()
+const { user, authLoaded } = useAppContext()
 const signInAppearance = {
   elements: {
     socialButtons: { display: 'none' },
@@ -46,7 +46,7 @@ const signInAppearance = {
 
 
           <Route path='/favorite' element={<Favorite />}/>
-          <Route path='/admin/*' element={user ? <Layout/> : (
+          <Route path='/admin/*' element={!authLoaded ? <Loading /> : user ? <Layout/> : (
             <div className='min-h-screen flex justify-center items-center'>
               <SignIn
                 fallbackRedirectUrl={'/admin'}

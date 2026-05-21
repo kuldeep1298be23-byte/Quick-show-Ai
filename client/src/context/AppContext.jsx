@@ -17,6 +17,7 @@ export const AppContext=createContext()
 export const AppProvider=({ children })=>{
 
     const [isAdmin, setIsAdmin]=useState(false)
+    const [isCheckingAdmin, setIsCheckingAdmin]=useState(true)
     const [shows, setShows]=useState([])
     const [favoriteMovies, setFavoriteMovies]=useState([])
 
@@ -37,12 +38,15 @@ export const AppProvider=({ children })=>{
     }, [getToken]);
 
     const fetchIsAdmin = useCallback(async()=>{
+        setIsCheckingAdmin(true);
         if (!isSignedIn) {
             setIsAdmin(false);
+            setIsCheckingAdmin(false);
             return;
         }
         if (!location.pathname.startsWith('/admin')) {
             setIsAdmin(false);
+            setIsCheckingAdmin(false);
             return;
         }
         try{
@@ -66,6 +70,8 @@ export const AppProvider=({ children })=>{
                 return;
             }
             console.error(error)
+        } finally {
+            setIsCheckingAdmin(false);
         }
     }, [getAuthConfig, isSignedIn, location.pathname, navigate])
 
@@ -133,6 +139,7 @@ useEffect(()=>{
         getToken,
         navigate,
         isAdmin,
+        isCheckingAdmin,
         shows,
         favoriteMovies,
         fetchFavoriteMovies,

@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import 'dotenv/config';
+import './configs/env.js';
 import connectDB from './configs/db.js';
 import { clerkMiddleware } from '@clerk/express'
 import { serve } from "inngest/express";
@@ -14,7 +14,7 @@ import { stripeWebhooks } from './controllers/stripeWebhooks.js';
 
 const app=express();
 const port=3000;
-connectDB()
+await connectDB()
 
 const allowedOrigins = [
   'http://localhost:5173',

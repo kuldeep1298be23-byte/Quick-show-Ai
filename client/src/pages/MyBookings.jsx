@@ -9,7 +9,7 @@ import { useAppContext } from '../context/AppContext'
 const MyBookings = () => {
   const currency=import.meta.env.VITE_CURRENCY
 
-  const { axios,getToken ,user,image_base_url}= useAppContext();
+  const { axios,getToken ,user,authLoaded,isSignedIn,image_base_url}= useAppContext();
 
     const[bookings, setBookings]=useState([])
     const[isLoading, setIsLoading]=useState(true)
@@ -39,12 +39,17 @@ const MyBookings = () => {
     }, [axios, getToken])
 
     useEffect(()=>{
-      if(user){
+      if(!authLoaded){
+        return
+      }
+
+      if(user && isSignedIn){
         getMyBookings()
       } else {
+        setBookings([])
         setIsLoading(false)
       }
-    },[user, getMyBookings])
+    },[authLoaded, user, isSignedIn, getMyBookings])
   
   return  !isLoading ? (
     <div className='relative px-6 md:px-16 lg:px-40 pt-30 md:pt-40 min-h-[80vh]'>
@@ -96,8 +101,12 @@ const MyBookings = () => {
         )
       })}
 
-      {bookings.length === 0 && (
+      {bookings.length === 0 && isSignedIn && (
         <p className='text-sm text-gray-400'>No bookings found</p>
+      )}
+
+      {!isSignedIn && (
+        <p className='text-sm text-gray-400'>Please sign in to view your bookings</p>
       )}
 
 

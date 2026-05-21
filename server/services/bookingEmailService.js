@@ -30,16 +30,20 @@ const formatShowDate = (date) => {
     });
 };
 
+const getClerkEmailAddress = (email) => email?.emailAddress || email?.email_address;
+
 const loadBookingUser = async (userId) => {
     try {
         const clerkUser = await clerkClient.users.getUser(userId);
+        const emailAddresses = clerkUser.emailAddresses || clerkUser.email_addresses || [];
+        const primaryEmailAddressId = clerkUser.primaryEmailAddressId || clerkUser.primary_email_address_id;
         const primaryEmail =
-            clerkUser.emailAddresses?.find((email) => email.id === clerkUser.primaryEmailAddressId)?.emailAddress ||
-            clerkUser.emailAddresses?.[0]?.emailAddress;
+            getClerkEmailAddress(emailAddresses.find((email) => email.id === primaryEmailAddressId)) ||
+            getClerkEmailAddress(emailAddresses[0]);
 
         if (primaryEmail) {
             return {
-                name: clerkUser.fullName || clerkUser.firstName || "QuickShow user",
+                name: clerkUser.fullName || clerkUser.firstName || clerkUser.first_name || "QuickShow user",
                 email: primaryEmail,
             };
         }
