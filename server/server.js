@@ -69,7 +69,7 @@ app.use(
 
 // CORS Middleware
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
+
 
 // Other Middleware
 app.use(express.json());
